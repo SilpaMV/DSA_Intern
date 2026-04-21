@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Restaurant Predictor</title>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0') no-repeat center center fixed;
+            background-size: cover;
+            margin: 0;
+        }
+
+        .overlay {
+            background: rgba(0,0,0,0.6);
+            min-height: 100vh;
+            padding: 40px;
+        }
+
+        .container {
+            width: 520px;
+            margin: auto;
+            background: rgba(255,255,255,0.95);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        h2 {
+            text-align: center;
+            color: #ff5733;
+        }
+
+        label {
+            margin-top: 10px;
+            display: block;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #ff5733;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 18px;
+            background: linear-gradient(45deg, #ff5733, #ff8d1a);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            transform: scale(1.02);
+        }
+
+        .result {
+            margin-top: 15px;
+            font-size: 18px;
+            color: green;
+            font-weight: bold;
+        }
+
+        .error {
+            margin-top: 15px;
+            color: red;
+        }
+
+        small {
+            color: gray;
+        }
+
+        /* Cuisine dropdown */
+        .dropdown {
+            display: none;
+            border: 1px solid #ccc;
+            background: white;
+            max-height: 150px;
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+
+        .dropdown div {
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        .dropdown div:hover {
+            background: #eee;
+        }
+
+        /* Chips */
+        .chips {
+            margin-top: 8px;
+        }
+
+        .chip {
+            display: inline-block;
+            background: #ff5733;
+            color: white;
+            padding: 6px 12px;
+            margin: 3px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .chip:hover {
+            background: #cc4626;
+        }
+
+        /* Suggestions box */
+        .suggestions {
+            margin-top: 15px;
+            background: #fff7f2;
+            padding: 10px;
+            border-radius: 10px;
+            border-left: 5px solid #ff5733;
+        }
+
+    </style>
+
+    <script>
+        function updateCostSuggestion() {
+            const category = document.getElementById("price_category").value;
+            const hint = document.getElementById("cost_hint");
+
+            if (category === "low") hint.innerText = "Suggested: Below ₹300";
+            else if (category === "medium") hint.innerText = "₹300 - ₹1000";
+            else if (category === "high") hint.innerText = "Above ₹1000";
+            else hint.innerText = "";
+        }
+
+        let selected = [];
+
+        function showDropdown() {
+            document.getElementById("dropdown").style.display = "block";
+        }
+
+        function selectCuisine(cuisine) {
+            if (!selected.includes(cuisine)) {
+                selected.push(cuisine);
+                renderChips();
+            }
+            document.getElementById("dropdown").style.display = "none";
+        }
+
+        function removeCuisine(item) {
+            selected = selected.filter(c => c !== item);
+            renderChips();
+        }
+
+        function renderChips() {
+            let container = document.getElementById("selected_cuisines");
+            container.innerHTML = "";
+
+            selected.forEach(item => {
+                let chip = document.createElement("span");
+                chip.className = "chip";
+                chip.innerText = item + " ✖";
+                chip.onclick = () => removeCuisine(item);
+                container.appendChild(chip);
+            });
+
+            document.getElementById("cuisine_hidden").value = selected.join(",");
+        }
+
+        function addManualCuisine(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                let val = event.target.value.trim();
+                if (val && !selected.includes(val)) {
+                    selected.push(val);
+                    renderChips();
+                }
+                event.target.value = "";
+            }
+        }
+    </script>
+</head>
+
+<body>
+
+<div class="overlay">
+<div class="container">
+
+    <h2>🍽️ Restaurant Predictor</h2>
+
+    <form method="POST" action="/predict">
+
+        <label>City</label>
+        <input type="text" name="city" required>
+
+        <label>Price Category</label>
+        <select name="price_category" id="price_category" onchange="updateCostSuggestion()" required>
+            <option value="">Select</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+        </select>
+
+        <label>Cost for Two</label>
+        <input type="number" name="cost" required>
+        <small id="cost_hint"></small>
+
+        <label>Cuisines</label>
+        <input type="text" placeholder="Type & press Enter OR click below"
+               onclick="showDropdown()" onkeypress="addManualCuisine(event)">
+
+        <div id="dropdown" class="dropdown">
+            <div onclick="selectCuisine('North Indian')">North Indian</div>
+            <div onclick="selectCuisine('South Indian')">South Indian</div>
+            <div onclick="selectCuisine('Chinese')">Chinese</div>
+            <div onclick="selectCuisine('Italian')">Italian</div>
+            <div onclick="selectCuisine('Arabian')">Arabian</div>
+            <div onclick="selectCuisine('Fast Food')">Fast Food</div>
+            <div onclick="selectCuisine('Biriyani')">Biriyani</div>
+        </div>
+
+        <div id="selected_cuisines" class="chips"></div>
+        <input type="hidden" name="cuisine" id="cuisine_hidden">
+
+        <label>Online Order</label>
+        <select name="order_online">
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+        </select>
+
+        <label>Table Booking</label>
+        <select name="book_table">
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+        </select>
+
+        <label>Delivery</label>
+        <select name="delivery_available">
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+        </select>
+
+        <label>Dine-in</label>
+        <select name="dinein_available">
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+        </select>
+
+        <label>City Population</label>
+        <input type="number" name="city_population" required>
+
+        <label>City Area (km²)</label>
+        <input type="number" name="city_area_km" required>
+
+        <label>Tourism</label>
+        <select name="tourism_flag">
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+        </select>
+
+        <label>GDP</label>
+        <select name="gdp_flag">
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+        </select>
+
+        <button type="submit">Predict Rating</button>
+    </form>
+
+    {% if prediction %}
+        <div class="result">{{ prediction }}</div>
+    {% endif %}
+
+    {% if suggestions %}
+        <div class="suggestions">
+            <b>Suggestions:</b><br>
+            <pre>{{ suggestions }}</pre>
+        </div>
+    {% endif %}
+
+</div>
+</div>
+
+</body>
+</html>
